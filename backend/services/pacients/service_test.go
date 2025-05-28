@@ -89,3 +89,114 @@ func TestServiceGetAll(t *testing.T) {
 		})
 	}
 }
+
+func TestServiceUpdate(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewService(db)
+
+	// Arrange: create a pacient to update
+	pacient := models.Pacient{
+		Name:        "John Doe",
+		BirthDate:   time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		CPF:         "123",
+		Sex:         "male",
+		PhoneNumber: "+123456789",
+		Address:     "123 Street",
+	}
+	err := service.Create(&pacient)
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name          string
+		id            uint64
+		updateData    models.Pacient
+		expectedError bool
+	}{
+		{
+			name: "successful update",
+			id:   uint64(pacient.ID),
+			updateData: models.Pacient{
+				Name: "Updated Name",
+			},
+			expectedError: false,
+		},
+		{
+			name: "pacient not found",
+			id:   9999,
+			updateData: models.Pacient{
+				Name: "Nonexistent",
+			},
+			expectedError: false, // Your service does not check RowsAffected, so it only returns error if DB fails.
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.Update(tt.id, &tt.updateData)
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// Fetch to verify update only for valid ID
+			if tt.id == uint64(pacient.ID) {
+				updated, err := service.Get(tt.id)
+				assert.NoError(t, err)
+				assert.Equal(t, "Updated Name", updated.Name)
+			}
+		})
+	}
+}
+
+func TestServiceDelete(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewService(db)
+
+	// Arrange: create a pacient to delete
+	pacient := models.Pacient{
+		Name:        "John Doe",
+		BirthDate:   time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		CPF:         "123",
+		Sex:         "male",
+		PhoneNumber: "+123456789",
+		Address:     "123 Street",
+	}
+	err := service.Create(&pacient)
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name          string
+		id            uint64
+		expectedError error
+	}{
+		{
+			name:          "successful delete",
+			id:            uint64(pacient.ID),
+			expectedError: nil,
+		},
+		{
+			name:          "non-existent pacient",
+			id:            9999,
+			expectedError: gorm.ErrRecordNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.Delete(tt.id)
+
+			if tt.expectedError != nil {
+				assert.ErrorIs(t, err, tt.expectedError)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// For the successful delete, verify that record no longer exists
+			if tt.expectedError == nil {
+				_, getErr := service.Get(tt.id)
+				assert.ErrorIs(t, getErr, gorm.ErrRecordNotFound)
+			}
+		})
+	}
+}

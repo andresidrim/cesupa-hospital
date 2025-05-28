@@ -59,6 +59,17 @@ func (s *Service) Update(id uint64, pacient *models.Pacient) error {
 	return s.db.Model(&models.Pacient{}).Where("id = ?", id).Updates(pacient).Error
 }
 
+func (s *Service) Delete(id uint64) error {
+	result := s.db.Delete(&models.Pacient{}, "id = ?", id)
+	if result.Error != nil {
+		return fmt.Errorf("unable to delete pacient: %v", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 func calculateAgeRange(age int) (time.Time, time.Time) {
 	now := time.Now()
 	from := now.AddDate(-age-1, 0, 1)

@@ -11,6 +11,7 @@ import (
 	"github.com/andresidrim/cesupa-hospital/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func setupTestRouter(h *Handler) *gin.Engine {
@@ -234,6 +235,86 @@ func TestUpdatePacient(t *testing.T) {
 
 			req, _ := http.NewRequest(http.MethodPut, "/pacients/"+tt.paramID, bytes.NewBufferString(tt.body))
 			req.Header.Set("Content-Type", "application/json")
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			t.Logf("Response: %s", resp.Body.String())
+			t.Log("END OF SUBTEST")
+			t.Log(strings.Repeat("-", 50))
+
+			assert.Equal(t, tt.expectedStatus, resp.Code)
+			assert.Contains(t, resp.Body.String(), tt.expectedBody)
+		})
+	}
+}
+
+func TestDeletePacient(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		paramID        string
+		mockGetErr     error
+		mockDeleteErr  error
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "invalid ID",
+			paramID:        "abc",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "Invalid ID",
+		},
+		{
+			name:           "pacient not found",
+			paramID:        "1",
+			mockGetErr:     gorm.ErrRecordNotFound,
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Pacient not found",
+		},
+		{
+			name:           "delete failure",
+			paramID:        "1",
+			mockGetErr:     nil,
+			mockDeleteErr:  assert.AnError,
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   "Failed to delete pacient",
+		},
+		{
+			name:           "successful delete",
+			paramID:        "1",
+			mockGetErr:     nil,
+			mockDeleteErr:  nil,
+			expectedStatus: http.StatusOK,
+			expectedBody:   "pacient",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mocks.MockPacientService{
+				MockGet: func(id uint64) (*models.Pacient, error) {
+					if tt.mockGetErr != nil {
+						return nil, tt.mockGetErr
+					}
+					return &models.Pacient{
+						Model: gorm.Model{
+							ID: uint(id),
+						},
+						Name: "John Doe",
+					}, nil
+				},
+				MockDelete: func(id uint64) error {
+					return tt.mockDeleteErr
+				},
+			}
+
+			handler := NewHandler(mockService)
+			router := gin.Default()
+			router.DELETE("/pacients/:id", handler.DeletePacient)
+
+			req, _ := http.NewRequest(http.MethodDelete, "/pacients/"+tt.paramID, nil)
 			resp := httptest.NewRecorder()
 
 			router.ServeHTTP(resp, req)

@@ -7,6 +7,7 @@ type MockPacientService struct {
 	MockGet    func(id uint64) (*models.Pacient, error)
 	MockGetAll func(name string, ageStr string) ([]models.Pacient, error)
 	MockUpdate func(id uint64, pacient *models.Pacient) error
+	MockDelete func(id uint64) error
 }
 
 func (m *MockPacientService) GetAll(name, ageStr string) ([]models.Pacient, error) {
@@ -31,5 +32,13 @@ func (m *MockPacientService) Update(id uint64, pacient *models.Pacient) error {
 	if m.MockUpdate != nil {
 		return m.MockUpdate(id, pacient)
 	}
+	return nil
+}
+
+func (m *MockPacientService) Delete(id uint64) error {
+	if m.MockDelete != nil {
+		return m.MockDelete(id)
+	}
+
 	return nil
 }
