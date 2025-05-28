@@ -19,4 +19,6 @@ type Pacient struct {
 	Email     *string
 	BloodType *enums.BloodType
 	Allergies *string
+
+	Appointments []Appointment `gorm:"foreignKey=PacientID;constraint:OnDelete:CASCADE"`
 }

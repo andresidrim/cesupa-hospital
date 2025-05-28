@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andresidrim/cesupa-hospital/enums"
 	"github.com/andresidrim/cesupa-hospital/models"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
@@ -14,8 +15,15 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	assert.NoError(t, err)
 
-	// Auto-migrate the Pacient model
-	err = db.AutoMigrate(&models.Pacient{})
+	db.Exec("PRAGMA foreign_keys = ON;")
+
+	// Auto-migrate all dependent models
+	err = db.AutoMigrate(
+		&models.User{},
+		&models.Doctor{},
+		&models.Appointment{},
+		&models.Pacient{},
+	)
 	assert.NoError(t, err)
 
 	t.Log("Test DB setup complete")
@@ -196,6 +204,72 @@ func TestServiceDelete(t *testing.T) {
 			if tt.expectedError == nil {
 				_, getErr := service.Get(tt.id)
 				assert.ErrorIs(t, getErr, gorm.ErrRecordNotFound)
+			}
+		})
+	}
+}
+
+func TestServiceScheduleAppointment(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewService(db)
+
+	// Arrange: create a pacient and doctor
+	pacient := models.Pacient{
+		Name:        "John Doe",
+		BirthDate:   time.Now().AddDate(-30, 0, 0),
+		CPF:         "12345678900",
+		Sex:         "male",
+		PhoneNumber: "+123456789",
+		Address:     "123 Street",
+	}
+	assert.NoError(t, service.Create(&pacient))
+
+	doctor := models.Doctor{
+		User: models.User{
+			Name: "Dr. Smith",
+			CPF:  "98765432100",
+			Role: enums.Doctor,
+		},
+	}
+	assert.NoError(t, db.Create(&doctor).Error)
+
+	tests := []struct {
+		name          string
+		appointment   models.Appointment
+		expectedError bool
+	}{
+		{
+			name: "valid appointment",
+			appointment: models.Appointment{
+				PacientID: pacient.ID,
+				DoctorID:  doctor.ID,
+				Date:      time.Now().AddDate(0, 0, 1),
+			},
+			expectedError: false,
+		},
+		{
+			name: "missing DoctorID",
+			appointment: models.Appointment{
+				PacientID: pacient.ID,
+				Date:      time.Now().AddDate(0, 0, 1),
+			},
+			expectedError: true, // Should fail due to gorm:"not null" on DoctorID
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.ScheduleAppointment(&tt.appointment)
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+
+				// Confirm appointment exists in DB
+				var appt models.Appointment
+				err = db.First(&appt, tt.appointment.ID).Error
+				assert.NoError(t, err)
+				assert.Equal(t, tt.appointment.PacientID, appt.PacientID)
 			}
 		})
 	}

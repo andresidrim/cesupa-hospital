@@ -29,3 +29,8 @@ type UpdatePacientDTO struct {
 	BloodType   *enums.BloodType `json:"bloodType"`
 	Allergies   *string          `json:"allergies"`
 }
+
+type ScheduleAppointmentDTO struct {
+	DoctorID uint      `json:"doctorId" binding:"required"`
+	Date     time.Time `json:"date" binding:"required"`
+}

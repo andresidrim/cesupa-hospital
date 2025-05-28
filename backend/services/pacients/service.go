@@ -23,7 +23,7 @@ func (s *Service) Create(pacient *models.Pacient) error {
 
 func (s *Service) Get(id uint64) (*models.Pacient, error) {
 	var pacient models.Pacient
-	if err := s.db.First(&pacient, id).Error; err != nil {
+	if err := s.db.Preload("Appointments").First(&pacient, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -32,7 +32,7 @@ func (s *Service) Get(id uint64) (*models.Pacient, error) {
 
 func (s *Service) GetAll(name string, ageStr string) ([]models.Pacient, error) {
 	var pacients []models.Pacient
-	query := s.db.Model(&models.Pacient{})
+	query := s.db.Model(&models.Pacient{}).Preload("Appointments")
 
 	if name != "" {
 		query = query.Where("name LIKE ?", "%"+name+"%")
@@ -68,6 +68,10 @@ func (s *Service) Delete(id uint64) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+func (s *Service) ScheduleAppointment(appointment *models.Appointment) error {
+	return s.db.Create(appointment).Error
 }
 
 func calculateAgeRange(age int) (time.Time, time.Time) {

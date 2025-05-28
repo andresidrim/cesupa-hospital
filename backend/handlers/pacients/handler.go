@@ -120,3 +120,37 @@ func (h *Handler) DeletePacient(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"pacient": deletedPacient})
 }
+
+func (h *Handler) ScheduleAppointment(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID: " + err.Error()})
+		return
+	}
+
+	if _, err := h.service.Get(id); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Pacient not found: " + err.Error()})
+		return
+	}
+
+	var payload ScheduleAppointmentDTO
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input: " + err.Error()})
+		return
+	}
+
+	var appointment models.Appointment
+	if err := copier.Copy(&appointment, &payload); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to copy data: " + err.Error()})
+		return
+	}
+
+	appointment.PacientID = uint(id)
+
+	if err := h.service.ScheduleAppointment(&appointment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to create appointment: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"appointment": appointment})
+}

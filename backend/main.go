@@ -22,6 +22,7 @@ func main() {
 	r.GET("/pacients/:id", pacientHandler.GetPacient)
 	r.PUT("/pacients/:id", pacientHandler.UpdatePacient)
 	r.DELETE("/pacients/:id", pacientHandler.DeletePacient)
+	r.POST("/pacients/:id/appointment", pacientHandler.ScheduleAppointment)
 
 	r.Run(":8080")
 }

@@ -8,4 +8,5 @@ type PacientService interface {
 	GetAll(name string, ageStr string) ([]models.Pacient, error)
 	Update(id uint64, pacient *models.Pacient) error
 	Delete(id uint64) error
+	ScheduleAppointment(appointment *models.Appointment) error
 }

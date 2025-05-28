@@ -328,3 +328,84 @@ func TestDeletePacient(t *testing.T) {
 		})
 	}
 }
+
+func TestScheduleAppointment(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		paramID        string
+		body           string
+		mockGetErr     error
+		mockCreateErr  error
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "invalid ID",
+			paramID:        "abc",
+			body:           `{}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "Invalid ID",
+		},
+		{
+			name:           "pacient not found",
+			paramID:        "1",
+			body:           `{ "doctorId": 1, "date": "2024-01-01T10:00:00Z" }`,
+			mockGetErr:     gorm.ErrRecordNotFound,
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Pacient not found",
+		},
+		{
+			name:           "invalid input",
+			paramID:        "1",
+			body:           `{ "doctorId": "invalid", "date": "2024-01-01T10:00:00Z" }`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "Invalid input",
+		},
+		{
+			name:           "DB error",
+			paramID:        "1",
+			body:           `{ "doctorId": 1, "date": "2024-01-01T10:00:00Z" }`,
+			mockGetErr:     nil,
+			mockCreateErr:  assert.AnError,
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   "Failed to create appointment",
+		},
+		{
+			name:           "success",
+			paramID:        "1",
+			body:           `{ "doctorId": 1, "date": "2024-01-01T10:00:00Z" }`,
+			mockGetErr:     nil,
+			mockCreateErr:  nil,
+			expectedStatus: http.StatusCreated,
+			expectedBody:   "appointment",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mocks.MockPacientService{
+				MockGet: func(id uint64) (*models.Pacient, error) {
+					return &models.Pacient{Model: gorm.Model{ID: uint(id)}, Name: "Test Pacient"}, tt.mockGetErr
+				},
+				MockScheduleAppointment: func(appt *models.Appointment) error {
+					return tt.mockCreateErr
+				},
+			}
+
+			handler := NewHandler(mockService)
+			router := gin.Default()
+			router.POST("/pacients/:id/appointments", handler.ScheduleAppointment)
+
+			req, _ := http.NewRequest(http.MethodPost, "/pacients/"+tt.paramID+"/appointments", bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			assert.Equal(t, tt.expectedStatus, resp.Code)
+			assert.Contains(t, resp.Body.String(), tt.expectedBody)
+		})
+	}
+}
