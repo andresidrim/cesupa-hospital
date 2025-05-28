@@ -18,8 +18,9 @@ func main() {
 	//  TODO: Configure CORS
 
 	r.POST("/pacients", pacientHandler.AddPacient)
-	r.GET("/pacients/:id", pacientHandler.GetPacient)
 	r.GET("/pacients", pacientHandler.GetAllPacients)
+	r.GET("/pacients/:id", pacientHandler.GetPacient)
+	r.PUT("/pacients/:id", pacientHandler.UpdatePacient)
 
 	r.Run(":8080")
 }

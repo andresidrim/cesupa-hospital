@@ -162,3 +162,88 @@ func TestGetAllPacients(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdatePacient(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		paramID        string
+		body           string
+		mockGetErr     error
+		mockUpdateErr  error
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "invalid ID",
+			paramID:        "abc",
+			body:           `{}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "Invalid ID",
+		},
+		{
+			name:           "pacient not found",
+			paramID:        "1",
+			body:           `{ "name": "John", "birthDate": "2000-01-01T00:00:00Z", "cpf":"123", "sex":"male", "phoneNumber":"123", "address":"street" }`,
+			mockGetErr:     assert.AnError,
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Pacient not found",
+		},
+		{
+			name:           "invalid input",
+			paramID:        "1",
+			body:           `{ "name": 123 }`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "Invalid Input",
+		},
+		{
+			name:           "update error",
+			paramID:        "1",
+			body:           `{ "name": "John", "birthDate": "2000-01-01T00:00:00Z", "cpf":"123", "sex":"male", "phoneNumber":"123", "address":"street" }`,
+			mockGetErr:     nil,
+			mockUpdateErr:  assert.AnError,
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   "Failed to update pacient",
+		},
+		{
+			name:           "successful update",
+			paramID:        "1",
+			body:           `{ "name": "John", "birthDate": "2000-01-01T00:00:00Z", "cpf":"123", "sex":"male", "phoneNumber":"123", "address":"street" }`,
+			mockGetErr:     nil,
+			mockUpdateErr:  nil,
+			expectedStatus: http.StatusOK,
+			expectedBody:   "pacient",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mocks.MockPacientService{
+				MockGet: func(id uint64) (*models.Pacient, error) {
+					return nil, tt.mockGetErr
+				},
+				MockUpdate: func(id uint64, pacient *models.Pacient) error {
+					return tt.mockUpdateErr
+				},
+			}
+
+			handler := NewHandler(mockService)
+			router := gin.Default()
+			router.PUT("/pacients/:id", handler.UpdatePacient)
+
+			req, _ := http.NewRequest(http.MethodPut, "/pacients/"+tt.paramID, bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			t.Logf("Response: %s", resp.Body.String())
+			t.Log("END OF SUBTEST")
+			t.Log(strings.Repeat("-", 50))
+
+			assert.Equal(t, tt.expectedStatus, resp.Code)
+			assert.Contains(t, resp.Body.String(), tt.expectedBody)
+		})
+	}
+}

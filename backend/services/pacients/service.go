@@ -55,6 +55,10 @@ func (s *Service) GetAll(name string, ageStr string) ([]models.Pacient, error) {
 	return pacients, nil
 }
 
+func (s *Service) Update(id uint64, pacient *models.Pacient) error {
+	return s.db.Model(&models.Pacient{}).Where("id = ?", id).Updates(pacient).Error
+}
+
 func calculateAgeRange(age int) (time.Time, time.Time) {
 	now := time.Now()
 	from := now.AddDate(-age-1, 0, 1)

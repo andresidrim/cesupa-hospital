@@ -49,6 +49,7 @@ func (h *Handler) GetPacient(c *gin.Context) {
 	pacient, err := h.service.Get(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Pacient not found: " + err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pacient": pacient})
@@ -65,4 +66,36 @@ func (h *Handler) GetAllPacients(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pacients": pacients})
+}
+
+func (h *Handler) UpdatePacient(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID: " + err.Error()})
+		return
+	}
+
+	if _, err := h.service.Get(id); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Pacient not found: " + err.Error()})
+		return
+	}
+
+	var payload UpdatePacientDTO
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Input: " + err.Error()})
+		return
+	}
+
+	var updatedPacient models.Pacient
+	if err := copier.Copy(&updatedPacient, &payload); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to copy data: " + err.Error()})
+		return
+	}
+
+	if err := h.service.Update(id, &updatedPacient); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update pacient: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pacient": updatedPacient})
 }
