@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/andresidrim/cesupa-hospital/database"
 	"github.com/andresidrim/cesupa-hospital/env"
+	"github.com/gin-contrib/cors"
 
 	authHandlers "github.com/andresidrim/cesupa-hospital/handlers/auth"
 	pacientsHandler "github.com/andresidrim/cesupa-hospital/handlers/pacients"
@@ -39,6 +40,13 @@ func main() {
 
 	// Setup Gin
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
 
 	// Rota pública de login
 	r.POST("/login", authH.Login)
