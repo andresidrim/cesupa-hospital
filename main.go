@@ -1,9 +1,30 @@
+// @title           CESUPA Hospital API
+// @version         1.0
+// @description     API para gerenciar pacientes, consultas e usuários do Hospital CESUPA.
+// @termsOfService  http://cesupa-hospital/terms/
+
+// @contact.name   Equipe de Desenvolvimento
+// @contact.url    http://cesupa-hospital/support
+// @contact.email  suporte@cesupa-hospital.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /
+
+// @schemes http https
+
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
 package main
 
 import (
 	"github.com/andresidrim/cesupa-hospital/database"
 	"github.com/andresidrim/cesupa-hospital/env"
 	"github.com/gin-contrib/cors"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	authHandlers "github.com/andresidrim/cesupa-hospital/handlers/auth"
 	pacientsHandler "github.com/andresidrim/cesupa-hospital/handlers/pacients"
@@ -40,6 +61,11 @@ func main() {
 
 	// Setup Gin
 	r := gin.Default()
+
+	// @securityDefinitions.apikey  BearerAuth
+	// @in                          header
+	// @name                        Authorization
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},

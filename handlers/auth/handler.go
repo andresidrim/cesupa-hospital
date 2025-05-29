@@ -16,6 +16,17 @@ func NewHandler(service as.AuthService) *Handler {
 	return &Handler{service: service}
 }
 
+// Register godoc
+// @Summary     Cadastra um novo usuário
+// @Description Recebe name, cpf, password e role e cria o usuário
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       payload body     RegisterDTO true "Dados para registro"
+// @Success     201     {object} handlers.RegisterResponse
+// @Failure     400     {object} handlers.ErrorResponse
+// @Failure     500     {object} handlers.ErrorResponse
+// @Router      /register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var payload RegisterDTO
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -45,6 +56,17 @@ func (h *Handler) Register(c *gin.Context) {
 	})
 }
 
+// Login godoc
+// @Summary     Faz login e retorna JWT
+// @Description Recebe cpf e senha e devolve um token
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       payload body     LoginDTO true "Dados para login"
+// @Success     200     {object} handlers.TokenResponse
+// @Failure     400     {object} handlers.ErrorResponse
+// @Failure     401     {object} handlers.ErrorResponse
+// @Router      /login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var payload LoginDTO
 	if err := c.ShouldBindJSON(&payload); err != nil {

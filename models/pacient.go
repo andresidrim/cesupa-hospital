@@ -8,7 +8,7 @@ import (
 )
 
 type Pacient struct {
-	gorm.Model
+	gorm.Model  `swaggerignore:"true"`
 	Name        string    `gorm:"not null" json:"name"`
 	BirthDate   time.Time `gorm:"type:date;not null" json:"birthDate"`
 	CPF         string    `gorm:"unique;not null" json:"cpf"`
@@ -20,5 +20,5 @@ type Pacient struct {
 	BloodType *enums.BloodType `json:"bloodType"`
 	Allergies *string          `json:"allergies"`
 
-	Appointments []Appointment `gorm:"foreignKey=PacientID;constraint:OnDelete:CASCADE" json:"appointments"`
+	Appointments []Appointment `gorm:"foreignKey=PacientID;constraint:OnDelete:CASCADE" json:"appointments" swaggerignore:"true"`
 }
