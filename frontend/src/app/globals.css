@@ -1,0 +1,28 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+  background-color: #f3f3f3;
+  color: #222;
+  padding: 24px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
