@@ -51,3 +51,13 @@ func (h *Handler) GetAllUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"users": users})
 }
+
+func (h *Handler) GetDoctors(c *gin.Context) {
+	// força o filtro de papel "doctor"
+	users, err := h.service.GetAll([]enums.Role{enums.Doctor})
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "No doctors found: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"doctors": users})
+}
