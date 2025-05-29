@@ -26,8 +26,8 @@ func NewHandler(service us.UserService) *Handler {
 // @Produce      json
 // @Param        id   path      int  true  "ID do usuário"
 // @Success      200  {object}  models.User
-// @Failure      400  {object}  gin.H       "Invalid ID"
-// @Failure      404  {object}  gin.H       "User not found"
+// @Failure      400  {object}  ErrorResponse       "Invalid ID"
+// @Failure      404  {object}  ErrorResponse       "User not found"
 // @Router       /users/{id} [get]
 func (h *Handler) GetUser(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -53,7 +53,7 @@ func (h *Handler) GetUser(c *gin.Context) {
 // @Produce      json
 // @Param        roles  query     []string  false  "Filtro de papéis separados por vírgula"
 // @Success      200    {array}   models.User
-// @Failure      404    {object}  gin.H      "No users were found"
+// @Failure      404    {object}  ErrorResponse      "No users were found"
 // @Router       /users [get]
 func (h *Handler) GetAllUsers(c *gin.Context) {
 	rawRoles := c.Query("roles")
@@ -80,7 +80,7 @@ func (h *Handler) GetAllUsers(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {array}   models.User
-// @Failure      404  {object}  gin.H      "No doctors found"
+// @Failure      404  {object}  ErrorResponse      "No doctors found"
 // @Router       /doctors [get]
 func (h *Handler) GetDoctors(c *gin.Context) {
 	// força o filtro de papel "doctor"

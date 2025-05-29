@@ -1,0 +1,568 @@
+basePath: /
+definitions:
+  auth.LoginDTO:
+    properties:
+      cpf:
+        type: string
+      password:
+        type: string
+    required:
+    - cpf
+    - password
+    type: object
+  auth.RegisterDTO:
+    properties:
+      cpf:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        $ref: '#/definitions/enums.Role'
+    required:
+    - cpf
+    - name
+    - password
+    - role
+    type: object
+  enums.BloodType:
+    enum:
+    - A+
+    - A-
+    - B+
+    - B-
+    - AB+
+    - AB-
+    - O+
+    - O-
+    type: string
+    x-enum-varnames:
+    - APositive
+    - ANegative
+    - BPositive
+    - BNegative
+    - ABPositive
+    - ABNegative
+    - OPositive
+    - ONegative
+  enums.Role:
+    enum:
+    - recepcionist
+    - doctor
+    - admin
+    type: string
+    x-enum-varnames:
+    - Receptionist
+    - Doctor
+    - Admin
+  enums.Sex:
+    enum:
+    - male
+    - famale
+    type: string
+    x-enum-varnames:
+    - Male
+    - Female
+  handlers.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  handlers.RegisterResponse:
+    properties:
+      cpf:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/enums.Role'
+    type: object
+  handlers.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  models.Appointment:
+    properties:
+      date:
+        type: string
+      pacientId:
+        type: integer
+      user:
+        $ref: '#/definitions/models.User'
+      userId:
+        type: integer
+    type: object
+  models.Pacient:
+    properties:
+      address:
+        type: string
+      allergies:
+        type: string
+      birthDate:
+        type: string
+      bloodType:
+        $ref: '#/definitions/enums.BloodType'
+      cpf:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phoneNumber:
+        type: string
+      sex:
+        $ref: '#/definitions/enums.Sex'
+    type: object
+  models.User:
+    properties:
+      appointments:
+        items:
+          $ref: '#/definitions/models.Appointment'
+        type: array
+      cpf:
+        type: string
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/enums.Role'
+    type: object
+  pacients.AddPacientDTO:
+    properties:
+      address:
+        type: string
+      allergies:
+        type: string
+      birthDate:
+        type: string
+      bloodType:
+        $ref: '#/definitions/enums.BloodType'
+      cpf:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phoneNumber:
+        type: string
+      sex:
+        $ref: '#/definitions/enums.Sex'
+    required:
+    - address
+    - birthDate
+    - cpf
+    - name
+    - phoneNumber
+    - sex
+    type: object
+  pacients.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  pacients.ScheduleAppointmentDTO:
+    properties:
+      date:
+        type: string
+      doctorId:
+        type: integer
+    required:
+    - date
+    - doctorId
+    type: object
+  pacients.UpdatePacientDTO:
+    properties:
+      address:
+        type: string
+      allergies:
+        type: string
+      birthDate:
+        type: string
+      bloodType:
+        $ref: '#/definitions/enums.BloodType'
+      cpf:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phoneNumber:
+        type: string
+      sex:
+        $ref: '#/definitions/enums.Sex'
+    required:
+    - address
+    - birthDate
+    - cpf
+    - name
+    - phoneNumber
+    - sex
+    type: object
+  users.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: suporte@cesupa-hospital.com
+    name: Equipe de Desenvolvimento
+    url: http://cesupa-hospital/support
+  description: API para gerenciar pacientes, consultas e usuários do Hospital CESUPA.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://cesupa-hospital/terms/
+  title: CESUPA Hospital API
+  version: "1.0"
+paths:
+  /doctors:
+    get:
+      consumes:
+      - application/json
+      description: Retorna todos os usuários cujo papel é 'doctor'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "404":
+          description: No doctors found
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      summary: Lista médicos
+      tags:
+      - Usuários
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Recebe cpf e senha e devolve um token
+      parameters:
+      - description: Dados para login
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Faz login e retorna JWT
+      tags:
+      - auth
+  /pacients:
+    get:
+      consumes:
+      - application/json
+      description: Retorna todos os pacientes, podendo filtrar por nome e/ou idade
+      parameters:
+      - description: Filtra pelo nome (substring)
+        in: query
+        name: name
+        type: string
+      - description: Filtra pela idade exata
+        in: query
+        name: age
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Pacient'
+            type: array
+        "404":
+          description: No pacient was found
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+      summary: Lista pacientes
+      tags:
+      - Pacientes
+    post:
+      consumes:
+      - application/json
+      description: Registra um paciente com dados obrigatórios e opcionais
+      parameters:
+      - description: Dados do paciente
+        in: body
+        name: paciente
+        required: true
+        schema:
+          $ref: '#/definitions/pacients.AddPacientDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Pacient'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "500":
+          description: Failed to create pacient
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+      summary: Cadastra um novo paciente
+      tags:
+      - Pacientes
+  /pacients/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Inativa (ou exclui) um paciente pelo ID
+      parameters:
+      - description: ID do paciente
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Pacient'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "404":
+          description: Pacient not found
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "500":
+          description: Failed to delete pacient
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+      summary: Exclui paciente
+      tags:
+      - Pacientes
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de um paciente pelo seu ID
+      parameters:
+      - description: ID do paciente
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Pacient'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "404":
+          description: Pacient not found
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+      summary: Busca paciente
+      tags:
+      - Pacientes
+    put:
+      consumes:
+      - application/json
+      description: Atualiza campos de um paciente existente (PATCH semantics)
+      parameters:
+      - description: ID do paciente
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados que serão atualizados
+        in: body
+        name: paciente
+        required: true
+        schema:
+          $ref: '#/definitions/pacients.UpdatePacientDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Pacient'
+        "400":
+          description: Invalid ID or Input
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "404":
+          description: Pacient not found
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "500":
+          description: Failed to update pacient
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+      summary: Atualiza paciente
+      tags:
+      - Pacientes
+  /pacients/{id}/appointments:
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova consulta para o paciente informado
+      parameters:
+      - description: ID do paciente
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados da consulta
+        in: body
+        name: appointment
+        required: true
+        schema:
+          $ref: '#/definitions/pacients.ScheduleAppointmentDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Appointment'
+        "400":
+          description: Invalid ID or Input
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "404":
+          description: Pacient not found
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+        "500":
+          description: Failed to create appointment
+          schema:
+            $ref: '#/definitions/pacients.ErrorResponse'
+      summary: Agenda consulta
+      tags:
+      - Pacientes
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Recebe name, cpf, password e role e cria o usuário
+      parameters:
+      - description: Dados para registro
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Cadastra um novo usuário
+      tags:
+      - auth
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retorna todos os usuários, podendo filtrar por um ou mais papéis
+      parameters:
+      - collectionFormat: csv
+        description: Filtro de papéis separados por vírgula
+        in: query
+        items:
+          type: string
+        name: roles
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "404":
+          description: No users were found
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      summary: Lista usuários
+      tags:
+      - Usuários
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna dados de um usuário pelo seu ID
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      summary: Busca usuário
+      tags:
+      - Usuários
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

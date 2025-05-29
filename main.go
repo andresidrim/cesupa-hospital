@@ -37,6 +37,10 @@ import (
 	"github.com/andresidrim/cesupa-hospital/enums"
 	"github.com/andresidrim/cesupa-hospital/middlewares"
 	"github.com/gin-gonic/gin"
+
+	swaggerFiles "github.com/swaggo/files"
+
+	_ "github.com/andresidrim/cesupa-hospital/docs" // <-- importante!
 )
 
 func main() {

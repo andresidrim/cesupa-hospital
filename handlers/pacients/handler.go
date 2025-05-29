@@ -26,8 +26,8 @@ func NewHandler(service ps.PacientService) *Handler {
 // @Produce      json
 // @Param        paciente  body      AddPacientDTO  true  "Dados do paciente"
 // @Success      201       {object}  models.Pacient
-// @Failure      400       {object}  gin.H         "Invalid input"
-// @Failure      500       {object}  gin.H         "Failed to create pacient"
+// @Failure      400       {object}  ErrorResponse      "Invalid input"
+// @Failure      500       {object}  ErrorResponse      "Failed to create pacient"
 // @Router       /pacients [post]
 func (h *Handler) AddPacient(c *gin.Context) {
 	var payload AddPacientDTO
@@ -58,8 +58,8 @@ func (h *Handler) AddPacient(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "ID do paciente"
 // @Success      200  {object}  models.Pacient
-// @Failure      400  {object}  gin.H        "Invalid ID"
-// @Failure      404  {object}  gin.H        "Pacient not found"
+// @Failure      400  {object}  ErrorResponse        "Invalid ID"
+// @Failure      404  {object}  ErrorResponse        "Pacient not found"
 // @Router       /pacients/{id} [get]
 func (h *Handler) GetPacient(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -86,7 +86,7 @@ func (h *Handler) GetPacient(c *gin.Context) {
 // @Param        name  query     string  false  "Filtra pelo nome (substring)"
 // @Param        age   query     int     false  "Filtra pela idade exata"
 // @Success      200   {array}   models.Pacient
-// @Failure      404   {object}  gin.H        "No pacient was found"
+// @Failure      404   {object}  ErrorResponse        "No pacient was found"
 // @Router       /pacients [get]
 func (h *Handler) GetAllPacients(c *gin.Context) {
 	name := c.Query("name")
@@ -110,9 +110,9 @@ func (h *Handler) GetAllPacients(c *gin.Context) {
 // @Param        id        path     int               true  "ID do paciente"
 // @Param        paciente  body     UpdatePacientDTO  true  "Dados que serão atualizados"
 // @Success      200       {object} models.Pacient
-// @Failure      400       {object} gin.H        "Invalid ID or Input"
-// @Failure      404       {object} gin.H        "Pacient not found"
-// @Failure      500       {object} gin.H        "Failed to update pacient"
+// @Failure      400       {object} ErrorResponse        "Invalid ID or Input"
+// @Failure      404       {object} ErrorResponse        "Pacient not found"
+// @Failure      500       {object} ErrorResponse        "Failed to update pacient"
 // @Router       /pacients/{id} [put]
 func (h *Handler) UpdatePacient(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -154,9 +154,9 @@ func (h *Handler) UpdatePacient(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "ID do paciente"
 // @Success      200  {object}  models.Pacient
-// @Failure      400  {object}  gin.H        "Invalid ID"
-// @Failure      404  {object}  gin.H        "Pacient not found"
-// @Failure      500  {object}  gin.H        "Failed to delete pacient"
+// @Failure      400  {object}  ErrorResponse        "Invalid ID"
+// @Failure      404  {object}  ErrorResponse        "Pacient not found"
+// @Failure      500  {object}  ErrorResponse        "Failed to delete pacient"
 // @Router       /pacients/{id} [delete]
 func (h *Handler) DeletePacient(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -188,9 +188,9 @@ func (h *Handler) DeletePacient(c *gin.Context) {
 // @Param        id          path      int                  true  "ID do paciente"
 // @Param        appointment  body     ScheduleAppointmentDTO true  "Dados da consulta"
 // @Success      201         {object}  models.Appointment
-// @Failure      400         {object}  gin.H              "Invalid ID or Input"
-// @Failure      404         {object}  gin.H              "Pacient not found"
-// @Failure      500         {object}  gin.H              "Failed to create appointment"
+// @Failure      400         {object}  ErrorResponse              "Invalid ID or Input"
+// @Failure      404         {object}  ErrorResponse              "Pacient not found"
+// @Failure      500         {object}  ErrorResponse              "Failed to create appointment"
 // @Router       /pacients/{id}/appointments [post]
 func (h *Handler) ScheduleAppointment(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
