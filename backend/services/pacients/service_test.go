@@ -17,10 +17,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 	db.Exec("PRAGMA foreign_keys = ON;")
 
-	// Auto-migrate all dependent models
 	err = db.AutoMigrate(
 		&models.User{},
-		&models.Doctor{},
 		&models.Appointment{},
 		&models.Pacient{},
 	)
@@ -31,11 +29,57 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+func TestServiceGet(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewService(db)
+
+	// Arrange: crie um pacient válido para o cenário de sucesso
+	existing := models.Pacient{
+		Name:        "Fetch Me",
+		BirthDate:   time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC),
+		CPF:         "55566677788",
+		Sex:         "male",
+		PhoneNumber: "+5511999999999",
+		Address:     "Rua Teste, 123",
+	}
+	assert.NoError(t, service.Create(&existing))
+
+	tests := []struct {
+		name      string
+		id        uint64
+		wantError bool
+		wantName  string
+	}{
+		{
+			name:      "found",
+			id:        uint64(existing.ID),
+			wantError: false,
+			wantName:  "Fetch Me",
+		},
+		{
+			name:      "not_found",
+			id:        9999,
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := service.Get(tt.id)
+			if tt.wantError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantName, got.Name)
+			}
+		})
+	}
+}
+
 func TestServiceGetAll(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 
-	// Arrange: create test pacients
 	pacients := []models.Pacient{
 		{Name: "John Doe", BirthDate: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC), CPF: "111", Sex: "male", PhoneNumber: "123", Address: "123 Street"},
 		{Name: "Jane Smith", BirthDate: time.Date(1995, 5, 10, 0, 0, 0, 0, time.UTC), CPF: "222", Sex: "female", PhoneNumber: "456", Address: "456 Avenue"},
@@ -47,7 +91,6 @@ func TestServiceGetAll(t *testing.T) {
 		t.Logf("Created pacient: %s, BirthDate: %s", p.Name, p.BirthDate.Format("2006-01-02"))
 	}
 
-	// Define test cases
 	tests := []struct {
 		name       string
 		filterName string
@@ -77,7 +120,6 @@ func TestServiceGetAll(t *testing.T) {
 		},
 	}
 
-	// Run test cases
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := service.GetAll(tt.filterName, tt.filterAge)
@@ -90,7 +132,6 @@ func TestServiceGetAll(t *testing.T) {
 
 			assert.Len(t, result, tt.wantCount)
 
-			// If expecting at least 1 result, check first's name
 			if tt.wantCount > 0 {
 				assert.Equal(t, tt.wantFirst, result[0].Name)
 			}
@@ -102,7 +143,6 @@ func TestServiceUpdate(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 
-	// Arrange: create a pacient to update
 	pacient := models.Pacient{
 		Name:        "John Doe",
 		BirthDate:   time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -134,7 +174,7 @@ func TestServiceUpdate(t *testing.T) {
 			updateData: models.Pacient{
 				Name: "Nonexistent",
 			},
-			expectedError: false, // Your service does not check RowsAffected, so it only returns error if DB fails.
+			expectedError: false,
 		},
 	}
 
@@ -147,7 +187,6 @@ func TestServiceUpdate(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// Fetch to verify update only for valid ID
 			if tt.id == uint64(pacient.ID) {
 				updated, err := service.Get(tt.id)
 				assert.NoError(t, err)
@@ -161,7 +200,6 @@ func TestServiceDelete(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 
-	// Arrange: create a pacient to delete
 	pacient := models.Pacient{
 		Name:        "John Doe",
 		BirthDate:   time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -200,7 +238,6 @@ func TestServiceDelete(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// For the successful delete, verify that record no longer exists
 			if tt.expectedError == nil {
 				_, getErr := service.Get(tt.id)
 				assert.ErrorIs(t, getErr, gorm.ErrRecordNotFound)
@@ -213,7 +250,6 @@ func TestServiceScheduleAppointment(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 
-	// Arrange: create a pacient and doctor
 	pacient := models.Pacient{
 		Name:        "John Doe",
 		BirthDate:   time.Now().AddDate(-30, 0, 0),
@@ -224,12 +260,10 @@ func TestServiceScheduleAppointment(t *testing.T) {
 	}
 	assert.NoError(t, service.Create(&pacient))
 
-	doctor := models.Doctor{
-		User: models.User{
-			Name: "Dr. Smith",
-			CPF:  "98765432100",
-			Role: enums.Doctor,
-		},
+	doctor := models.User{
+		Name: "Dr. Smith",
+		CPF:  "98765432100",
+		Role: enums.Doctor,
 	}
 	assert.NoError(t, db.Create(&doctor).Error)
 
@@ -242,7 +276,7 @@ func TestServiceScheduleAppointment(t *testing.T) {
 			name: "valid appointment",
 			appointment: models.Appointment{
 				PacientID: pacient.ID,
-				DoctorID:  doctor.ID,
+				UserID:    doctor.ID,
 				Date:      time.Now().AddDate(0, 0, 1),
 			},
 			expectedError: false,
@@ -253,7 +287,7 @@ func TestServiceScheduleAppointment(t *testing.T) {
 				PacientID: pacient.ID,
 				Date:      time.Now().AddDate(0, 0, 1),
 			},
-			expectedError: true, // Should fail due to gorm:"not null" on DoctorID
+			expectedError: true,
 		},
 	}
 
@@ -265,7 +299,6 @@ func TestServiceScheduleAppointment(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 
-				// Confirm appointment exists in DB
 				var appt models.Appointment
 				err = db.First(&appt, tt.appointment.ID).Error
 				assert.NoError(t, err)

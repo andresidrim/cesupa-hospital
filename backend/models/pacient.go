@@ -9,16 +9,16 @@ import (
 
 type Pacient struct {
 	gorm.Model
-	Name        string    `gorm:"not null"`
-	BirthDate   time.Time `gorm:"type:date;not null"`
-	CPF         string    `gorm:"unique;not null"`
-	Sex         enums.Sex `gorm:"not null"`
-	PhoneNumber string    `gorm:"not null"`
-	Address     string    `gorm:"not null"`
+	Name        string    `gorm:"not null" json:"name"`
+	BirthDate   time.Time `gorm:"type:date;not null" json:"birthDate"`
+	CPF         string    `gorm:"unique;not null" json:"cpf"`
+	Sex         enums.Sex `gorm:"not null" json:"sex"`
+	PhoneNumber string    `gorm:"not null" json:"phoneNumber"`
+	Address     string    `gorm:"not null" json:"address"`
 
-	Email     *string
-	BloodType *enums.BloodType
-	Allergies *string
+	Email     *string          `json:"email"`
+	BloodType *enums.BloodType `json:"bloodType"`
+	Allergies *string          `json:"allergies"`
 
-	Appointments []Appointment `gorm:"foreignKey=PacientID;constraint:OnDelete:CASCADE"`
+	Appointments []Appointment `gorm:"foreignKey=PacientID;constraint:OnDelete:CASCADE" json:"appointments"`
 }

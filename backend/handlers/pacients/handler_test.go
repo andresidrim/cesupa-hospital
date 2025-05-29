@@ -105,6 +105,62 @@ func TestAddPacient(t *testing.T) {
 	}
 }
 
+func TestGetPacient(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		paramID        string
+		mockGetErr     error
+		mockPacient    *models.Pacient
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "invalid ID",
+			paramID:        "abc",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "Invalid ID",
+		},
+		{
+			name:           "pacient not found",
+			paramID:        "1",
+			mockGetErr:     assert.AnError,
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Pacient not found",
+		},
+		{
+			name:           "success",
+			paramID:        "42",
+			mockPacient:    &models.Pacient{Model: gorm.Model{ID: 42}, Name: "John Doe"},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `"John Doe"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mocks.MockPacientService{
+				MockGet: func(id uint64) (*models.Pacient, error) {
+					return tt.mockPacient, tt.mockGetErr
+				},
+			}
+
+			handler := NewHandler(mockService)
+			router := gin.Default()
+			router.GET("/pacients/:id", handler.GetPacient)
+
+			req, _ := http.NewRequest(http.MethodGet, "/pacients/"+tt.paramID, nil)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			assert.Equal(t, tt.expectedStatus, resp.Code)
+			assert.Contains(t, resp.Body.String(), tt.expectedBody)
+		})
+	}
+}
+
 func TestGetAllPacients(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

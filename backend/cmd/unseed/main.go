@@ -1,7 +1,11 @@
 package main
 
-import "os"
+import (
+	"os"
+
+	"github.com/andresidrim/cesupa-hospital/env"
+)
 
 func main() {
-	os.Remove("dev.db")
+	os.Remove(env.DB_URL)
 }

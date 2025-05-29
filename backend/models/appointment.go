@@ -8,8 +8,9 @@ import (
 
 type Appointment struct {
 	gorm.Model
-	PacientID uint `gorm:"not null"`
-	DoctorID  uint `gorm:"not null;constraint:OnDelete:CASCADE"`
-	Doctor    Doctor
-	Date      time.Time `gorm:"not null"`
+	PacientID uint      `gorm:"not null" json:"pacientId"`
+	Pacient   Pacient   `json:"pacient"`
+	UserID    uint      `gorm:"not null" json:"userId"`
+	User      User      `json:"user"`
+	Date      time.Time `gorm:"not null" json:"date"`
 }
