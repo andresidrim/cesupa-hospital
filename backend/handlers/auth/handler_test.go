@@ -13,6 +13,7 @@ import (
 	"github.com/andresidrim/cesupa-hospital/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 // setup router for Register
@@ -138,32 +139,34 @@ func TestLoginHandler(t *testing.T) {
 	}
 }
 
-func TestRegisterHandler_Unauthorized(t *testing.T) {
+func TestRegisterHandlerUnauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// MockAuthService não usado no middleware, apenas para satisfazer assinatura
-	ms := &mocks.MockAuthService{}
+	mockUserSvc := &mocks.MockUserService{
+		MockGet: func(id uint64) (*models.User, error) {
+			return &models.User{Model: gorm.Model{ID: uint(id)}, Role: enums.Doctor}, nil
+		},
+	}
+
+	mockAuthSvc := &mocks.MockAuthService{}
 
 	r := gin.Default()
-	// aplica autenticação e autorização como no main
-	r.Use(
-		middlewares.JWTAuthMiddleware(ms),
+	protected := r.Group("/")
+	protected.Use(
+		middlewares.JWTAuthMiddleware(mockUserSvc),
 		middlewares.RoleMiddleware(enums.Admin),
 	)
-	r.POST("/register", NewHandler(ms).Register)
+	protected.POST("/register", NewHandler(mockAuthSvc).Register)
 
-	// 1) Sem token
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/register", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 
-	// 2) Token válido mas sem role Admin -> 403
-	// cria token para usuário de papel Doctor
-	tok, _ := utils.GenerateJWT(42)
+	token, _ := utils.GenerateJWT(1)
 	w = httptest.NewRecorder()
 	req = httptest.NewRequest("POST", "/register", nil)
-	req.Header.Set("Authorization", "Bearer "+tok)
+	req.Header.Set("Authorization", "Bearer "+token)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
